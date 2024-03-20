@@ -1,0 +1,174 @@
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <map>
+#include <vector>
+
+// Forward declaration to enable references from CommandInterpreter to Player
+class Player;
+
+class Item {
+public:
+    std::string name;
+    std::string description;
+
+    Item(std::string name, std::string description) : name(name), description(description) {}
+
+    virtual void use() {
+        std::cout << "Using " << name << std::endl;
+    }
+};
+
+class Key : public Item {
+public:
+    Key(std::string name, std::string description) : Item(name, description) {}
+
+    void use() override {
+        std::cout << "Using " << name << " to unlock something." << std::endl;
+    }
+};
+
+// A simple Room class to be used by Player for demonstration purposes
+class Room {
+public:
+    std::string name;
+    std::map<std::string, Room*> exits;
+
+    Room(std::string name) : name(name) {}
+
+    void addExit(std::string direction, Room* room) {
+        exits[direction] = room;
+    }
+
+    Room* getExit(std::string direction) {
+        if (exits.find(direction) != exits.end()) {
+            return exits[direction];
+        } else {
+            return nullptr;
+        }
+    }
+};
+
+class Inventory {
+private:
+    std::vector<Item*> items;
+
+public:
+    void addItem(Item* item) {
+        items.push_back(item);
+    }
+
+    void listItems() {
+        if (items.empty()) {
+            std::cout << "Inventory is empty." << std::endl;
+        } else {
+            std::cout << "Inventory:" << std::endl;
+            for (Item* item : items) {
+                std::cout << "- " << item->name << ": " << item->description << std::endl;
+            }
+        }
+    }
+
+    // Example functionality: find an item by name
+    Item* findItem(const std::string& name) {
+        for (Item* item : items) {
+            if (item->name == name) return item;
+        }
+        return nullptr;
+    }
+};
+
+
+// Task 1: Design the Command Interpreter Class
+class CommandInterpreter {
+public:
+    CommandInterpreter(Player* player) : player_(player) {}
+
+    void interpretCommand(const std::string& command);
+
+private:
+    Player* player_; // Pointer to the player object
+};
+
+// Task 2: Implement Player and NPC Actions
+class Player {
+private:
+    Room* currentRoom;
+    Inventory inventory;
+
+public:
+    Player() : currentRoom(nullptr) {}
+
+    void move(const std::string& direction) {
+        // Existing movement logic
+    }
+
+    void lookAround() const {
+        // Existing lookAround logic
+    }
+
+    void setCurrentRoom(Room* room) {
+        // Existing setCurrentRoom logic
+    }
+
+    void pickUpItem(Item* item) {
+        inventory.addItem(item);
+        std::cout << "Picked up " << item->name << "." << std::endl;
+    }
+
+    void showInventory() {
+        inventory.listItems();
+    }
+};
+
+
+// re task 3 to integrate interpreter
+// here is to execute player commands through the interpreter.
+void CommandInterpreter::interpretCommand(const std::string& command) {
+    std::istringstream iss(command);
+    std::string action;
+    iss >> action;
+
+    if (action == "move") {
+        // Existing move logic
+    } else if (action == "look") {
+        // Existing look logic
+    } else if (action == "pickup") {
+        std::string itemName;
+        if (iss >> itemName) {
+            // Assuming an environment where items can be picked up directly.
+            // You might want to modify this to suit how items are presented in the game world.
+            Item* item = new Item(itemName, "A simple item"); // Example item creation
+            player_->pickUpItem(item);
+        } else {
+            std::cout << "Pick up what?" << std::endl;
+        }
+    } else if (action == "inventory") {
+        player_->showInventory();
+    } else {
+        std::cout << "Unknown command." << std::endl;
+    }
+}
+
+
+int main() {
+    // small world for demonstration. 
+    Room* startRoom = new Room("Start Room");
+    Room* secondRoom = new Room("Second Room");
+    startRoom->addExit("north", secondRoom);
+
+    Player player;
+    player.setCurrentRoom(startRoom);
+
+    CommandInterpreter interpreter(&player);
+
+    std::string command;
+    std::cout << "Enter commands ('quit' to exit):" << std::endl;
+    while (std::getline(std::cin, command) && command != "quit") {
+        interpreter.interpretCommand(command);
+    }
+
+    delete startRoom;
+    delete secondRoom;
+    return 0;
+}
