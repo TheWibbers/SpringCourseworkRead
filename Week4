@@ -1,1 +1,120 @@
+#include <iostream>
+#include <string>
+#include <map>
+#include <vector>
+
+// Forward declaration to allow reference from Room and Character classes
+class Item;
+
+// Task 1: Create a Room Class (Composition)
+class Room {
+private:
+    std::string description;
+    std::map<std::string, Room*> exits;
+    std::vector<Item> items;
+
+public:
+    Room(const std::string& desc) : description(desc) {}
+
+    void AddItem(const Item& item) {
+        items.push_back(item);
+    }
+
+    void RemoveItem(const Item& item); // To be implemented
+
+    void AddExit(const std::string& direction, Room* room) {
+        exits[direction] = room;
+    }
+
+    // Example of a method to get a description (not part of original task but useful)
+    std::string GetDescription() const { return description; }
+
+    // Example of a method to get exits (not part of original task but useful)
+    Room* GetExit(const std::string& direction) {
+        if (exits.find(direction) != exits.end()) {
+            return exits[direction];
+        } else {
+            return nullptr;
+        }
+    }
+};
+
+// Task 2: Create an Item Class (Composition)
+class Item {
+private:
+    std::string name;
+    std::string description;
+
+public:
+    Item(const std::string& name, const std::string& desc) : name(name), description(desc) {}
+
+    void Interact() {
+        std::cout << "Interacting with " << name << ": " << description << std::endl;
+    }
+
+    std::string GetName() const { return name; }
+    std::string GetDescription() const { return description; }
+};
+
+// Task three, character class with inheritence 
+class Character {
+protected:
+    std::string name;
+    int health;
+    std::vector<Item> inventory;
+
+public:
+    Character(const std::string& name, int health) : name(name), health(health) {}
+
+    void TakeDamage(int damage) {
+        health -= damage;
+        if (health < 0) health = 0;
+    }
+
+    // Inventory management methods not shown here
+};
+
+class Player : public Character {
+private:
+    Room* location;
+
+public:
+    Player(const std::string& name, int health) : Character(name, health), location(nullptr) {}
+
+    void SetLocation(Room* newLocation) {
+        location = newLocation;
+    }
+
+    Room* GetLocation() const { return location; }
+};
+
+// task 4 composition 
+
+int main() {
+    // Create Rooms
+    Room startRoom("You are in a dimly lit room.");
+    Room hallway("You are in a long hallway.");
+    Room treasureRoom("You have entered a treasure room!");
+
+    startRoom.AddExit("north", &hallway);
+    hallway.AddExit("south", &startRoom);
+    hallway.AddExit("north", &treasureRoom);
+    treasureRoom.AddExit("south", &hallway);
+
+    // creating the items 
+    Item key("Key", "A shiny key that looks important.");
+    Item sword("Sword", "A sharp sword with a golden hilt.");
+
+    // adding items to the room. 
+    startRoom.AddItem(key);
+    treasureRoom.AddItem(sword);
+
+    // Create a Player
+    Player player("Alice", 100);
+
+    // players starting location. 
+    player.SetLocation(&startRoom);
+
+    return 0; 
+}
 
