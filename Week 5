@@ -1,1 +1,151 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <map>
+#include <vector>
+
+// task 1 to create an area task. 
+class Item {
+public:
+    std::string name;
+    std::string description;
+
+    Item(const std::string& name, const std::string& desc) : name(name), description(desc) {}
+
+    void Interact() const {
+        std::cout << "You see " << name << ": " << description << std::endl;
+    }
+};
+
+class Room {
+public:
+    std::string description;
+    std::map<std::string, Room*> exits;
+    std::vector<Item> items;
+
+    Room(const std::string& desc) : description(desc) {}
+
+    void AddExit(const std::string& direction, Room* room) {
+        exits[direction] = room;
+    }
+
+    void AddItem(const Item& item) {
+        items.push_back(item);
+    }
+
+    Room* GetExit(const std::string& direction) const {
+        auto it = exits.find(direction);
+        if (it != exits.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+};
+
+class Area {
+private:
+    std::map<std::string, Room*> rooms;
+
+public:
+    void AddRoom(const std::string& name, Room* room) {
+        rooms[name] = room;
+    }
+
+    Room* GetRoom(const std::string& name) const {
+        auto it = rooms.find(name);
+        if (it != rooms.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+
+    void ConnectRooms(const std::string& room1Name, const std::string& room2Name, const std::string& direction) {
+        Room* room1 = GetRoom(room1Name);
+        Room* room2 = GetRoom(room2Name);
+        if (room1 && room2) {
+            room1->AddExit(direction, room2);
+        }
+    }
+
+    // Refacting mainn cpde to use area class and load from a file.
+    void LoadMapFromFile(const std::string& filename) {
+        std::ifstream file(filename);
+        std::string line;
+        while (getline(file, line)) {
+            std::istringstream iss(line);
+            std::string roomName, connectedRoomName, direction;
+            if (!(iss >> roomName >> connectedRoomName >> direction)) break;
+
+            // for simplicity, im just going to create the rooms here. 
+            ConnectRooms(roomName, connectedRoomName, direction);
+        }
+    }
+};
+
+class Player {
+public:
+    std::string name;
+    Room* currentRoom;
+
+    Player(const std::string& playerName) : name(playerName), currentRoom(nullptr) {}
+
+    void MoveToRoom(Room* room) {
+        currentRoom = room;
+        std::cout << "Moving to " << room->description << std::endl;
+    }
+
+    void LookAround() const {
+        if (currentRoom) {
+            std::cout << "You are in " << currentRoom->description << std::endl;
+            for (const auto& item : currentRoom->items) {
+                std::cout << "You see a " << item.name << std::endl;
+            }
+        }
+    }
+};
+
+int main() {
+    // creating the game wor.d 
+    Area gameWorld;
+
+    // manage game world .
+    gameWorld.LoadMapFromFile("game_map.txt"); // file created. 
+
+    // creating player and placing him in the room.
+    Player player("Adventurer");
+    player.MoveToRoom(gameWorld.GetRoom("Start"));
+
+    // Task 3; testing the refactored game
+    bool gameRunning = true;
+    while (gameRunning) {
+        std::cout << "You are in: " << player.currentRoom->description << std::endl;
+        std::cout << "1. Look around\n2. Move north\n3. Quit" << std::endl;
+        std::cout << "> ";
+        int choice;
+        std::cin >> choice;
+
+        switch (choice) {
+            case 1:
+                player.LookAround();
+                break;
+            case 2:
+                if (auto* nextRoom = player.currentRoom->GetExit("north")) {
+                    player.MoveToRoom(nextRoom);
+                } else {
+                    std::cout << "You can't go that way." << std::endl;
+                }
+                          break;
+                      case 3:
+                          gameRunning = false;
+                          std::cout << "Exiting game." << std::endl;
+                          break;
+                      default:
+                          std::cout << "Invalid choice, please try again." << std::endl;
+                          break;
+                  }
+              }
+
+              return 0;
+          }
 
