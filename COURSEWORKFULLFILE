@@ -1,0 +1,205 @@
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <map>
+#include <vector>
+#include <algorithm> // For sort
+
+class Item {
+public:
+    std::string name;
+    std::string description;
+
+    Item(std::string name, std::string description) : name(name), description(description) {}
+
+    virtual void use() {
+        std::cout << "You hold " << name << " in your hand." << std::endl;
+    }
+};
+
+class Key : public Item {
+public:
+    Key(std::string name, std::string description) : Item(name, description) {}
+
+    void use() override {
+        std::cout << "You wave " << name << " around, feeling important." << std::endl;
+    }
+};
+
+class Potion : public Item {
+public:
+    Potion(std::string name, std::string description) : Item(name, description) {}
+
+    void use() override {
+        std::cout << "You examine " << name << ", wondering about its effects." << std::endl;
+    }
+};
+
+class Inventory {
+private:
+    std::vector<Item*> items;
+
+    void sortItems() {
+        std::sort(items.begin(), items.end(), [](const Item* a, const Item* b) {
+            return a->name < b->name;
+        });
+    }
+
+public:
+    void addItem(Item* item) {
+        items.push_back(item);
+        sortItems();
+    }
+
+    void listItems() const {
+        if (items.empty()) {
+            std::cout << "Inventory is empty." << std::endl;
+        } else {
+            std::cout << "Inventory items, sorted alphabetically:" << std::endl;
+            for (Item* item : items) {
+                std::cout << "- " << item->name << ": " << item->description << std::endl;
+            }
+        }
+    }
+
+    Item* getItem(const std::string& name) const {
+        for (auto* item : items) {
+            if (item->name == name) return item;
+        }
+        return nullptr;
+    }
+};
+
+class Room {
+public:
+    std::string name;
+    std::map<std::string, Room*> exits;
+
+    Room(std::string name) : name(name) {}
+
+    void addExit(std::string direction, Room* room) {
+        exits[direction] = room;
+    }
+
+    Room* getExit(std::string direction) {
+        if (exits.find(direction) != exits.end()) {
+            return exits[direction];
+        } else {
+            return nullptr;
+        }
+    }
+};
+
+class Player {
+private:
+    Room* currentRoom = nullptr;
+    Inventory inventory;
+
+public:
+    Player() : currentRoom(nullptr) {}
+
+    void move(const std::string& direction) {
+        if (currentRoom != nullptr) {
+            Room* nextRoom = currentRoom->getExit(direction);
+            if (nextRoom != nullptr) {
+                currentRoom = nextRoom;
+                std::cout << "Moved to " << currentRoom->name << "." << std::endl;
+            } else {
+                std::cout << "You can't go that way." << std::endl;
+            }
+        }
+    }
+
+    void lookAround() const {
+        if (currentRoom != nullptr) {
+            std::cout << "You are in " << currentRoom->name << "." << std::endl;
+            std::cout << "Available exits:";
+            for (const auto& exit : currentRoom->exits) {
+                std::cout << " " << exit.first;
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "You are nowhere." << std::endl;
+        }
+    }
+
+    void setCurrentRoom(Room* room) {
+        currentRoom = room;
+    }
+
+    void pickUpItem(Item* item) {
+        inventory.addItem(item);
+        std::cout << "Picked up " << item->name << "." << std::endl;
+    }
+
+    void showInventory() const {
+        inventory.listItems();
+    }
+
+    void useItem(const std::string& itemName) {
+        Item* item = inventory.getItem(itemName);
+        if (item) {
+            item->use();
+        } else {
+            std::cout << "You don't have \"" << itemName << "\" in your inventory." << std::endl;
+        }
+    }
+};
+
+class CommandInterpreter {
+private:
+    Player* player;
+
+public:
+    CommandInterpreter(Player* player) : player(player) {}
+
+    void interpretCommand(const std::string& command) {
+        std::istringstream iss(command);
+        std::string action;
+        iss >> action;
+
+        if (action == "move") {
+            std::string direction;
+            if (iss >> direction) {
+                player->move(direction);
+            } else {
+                std::cout << "Move where?" << std::endl;
+            }
+        } else if (action == "look") {
+            player->lookAround();
+        } else if (action == "pickup") {
+            // This requires an actual mechanism to pick up items from the environment
+            std::cout << "You'll need to add logic to determine which item to pick up." << std::endl;
+        } else if (action == "inventory") {
+            player->showInventory();
+        } else if (action == "use") {
+            std::string itemName;
+            if (iss >> itemName) {
+                player->useItem(itemName);
+            } else {
+                std::cout << "Use what?" << std::endl;
+            }
+        } else {
+            std::cout << "Unknown command." << std::endl;
+        }
+    }
+};
+
+int main() {
+    Room startRoom("Start Room");
+    Room secondRoom("Second Room");
+    startRoom.addExit("north", &secondRoom);
+
+    Player player;
+    player.setCurrentRoom(&startRoom);
+
+    CommandInterpreter interpreter(&player);
+
+    std::cout << "Enter commands ('quit' to exit):" << std::endl;
+    std::string command;
+    while (std::getline(std::cin, command) && command != "quit") {
+        interpreter.interpretCommand(command);
+    }
+
+    return 0;
+}
