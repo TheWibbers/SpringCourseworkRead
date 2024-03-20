@@ -1,0 +1,139 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+
+// Base class for all game objects, enabling interaction
+class GameObject {
+public:
+    virtual void interact(GameObject& other) = 0;
+    virtual ~GameObject() = default;
+};
+
+// Example objects that can interact
+class Key : public GameObject {
+public:
+    void interact(GameObject& other) override {
+        std::cout << "Key used" << std::endl;
+    }
+};
+
+class Door : public GameObject {
+public:
+    void interact(GameObject& other) override {
+        std::cout << "Door interacts with another object." << std::endl;
+    }
+};
+
+// Inventory system to manage game objects
+class Inventory {
+private:
+    std::vector<GameObject*> items;
+public:
+    void addItem(GameObject* item) {
+        items.push_back(item);
+    }
+
+    void useItem(GameObject* item, GameObject& target) {
+        item->interact(target);
+    }
+
+    ~Inventory() {
+        for (auto* item : items) {
+            delete item;
+        }
+    }
+};
+
+// Dynamic NPC with basic state machine
+class NPC {
+private:
+    enum State { Idle, Aggressive, Fleeing };
+    State currentState;
+public:
+    NPC() : currentState(Idle) {}
+
+    void update() {
+        // Update NPC state based on game events (placeholder logic)
+        currentState = Aggressive;
+    }
+
+    void interactWithPlayer() {
+        if (currentState == Aggressive) {
+            std::cout << "NPC is aggressive." << std::endl;
+        }
+    }
+};
+
+// Quest system to track game progress
+class Quest {
+public:
+    enum Status { NotStarted, InProgress, Completed };
+    Status status;
+
+    Quest() : status(NotStarted) {}
+
+    void start() {
+        status = InProgress;
+        std::cout << "Quest started." << std::endl;
+    }
+
+    void update() {
+        // Placeholder progress update logic
+        std::cout << "Quest in progress." << std::endl;
+    }
+
+    void complete() {
+        status = Completed;
+        std::cout << "Quest completed." << std::endl;
+    }
+};
+
+// Save and load game state
+class GameSaverLoader {
+public:
+    void saveGame(const std::string& filename) {
+        std::ofstream file(filename);
+        if (file.is_open()) {
+            // Example save logic
+            file << "Game saved" << std::endl;
+            file.close();
+        }
+    }
+
+    void loadGame(const std::string& filename) {
+        std::ifstream file(filename);
+        std::string line;
+        if (file.is_open()) {
+            while (getline(file, line)) {
+                // Example load logic
+                std::cout << line << std::endl;
+            }
+            file.close();
+        }
+    }
+};
+
+int main() {
+    // Example usage
+    Inventory inventory;
+    Key* key = new Key();
+    Door door;
+    inventory.addItem(key);
+    inventory.useItem(key, door);
+
+    NPC npc;
+    npc.update();
+    npc.interactWithPlayer();
+
+    Quest quest;
+    quest.start();
+    quest.update();
+    quest.complete();
+
+    GameSaverLoader gsl;
+    gsl.saveGame("game_save.txt");
+    gsl.loadGame("game_save.txt");
+
+    return 0;
+}
